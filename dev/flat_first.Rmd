@@ -1,0 +1,1568 @@
+---
+title: "flat_first.Rmd for working package"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+<!-- Run this 'development' chunk -->
+<!-- Store every call to library() that you need to explore your functions -->
+
+```{r development, include=FALSE}
+library(testthat)
+library(parallel)
+```
+
+<!--
+ You need to run the 'description' chunk in the '0-dev_history.Rmd' file before continuing your code there.
+
+If it is the first time you use {fusen}, after 'description', you can directly run the last chunk of the present file with inflate() inside.
+--> 
+
+```{r development-load}
+# Load already included functions if relevant
+pkgload::load_all(export_all = FALSE)
+```
+
+# Include some data examples in your package
+
+<!-- 
+ Store your dataset in a directory named "inst/" at the root of your project.
+ Use it for your tests in this Rmd thanks to `pkgload::load_all()` to make it available
+and `system.file()` to read it in your examples.
+
+- There already is a dataset in the "inst/" directory to be used in the examples below
+-->
+
+```{r development-dataset}
+# Run all this chunk in the console directly
+# There already is a dataset in the "inst/" directory
+# Make the dataset file available to the current Rmd during development
+pkgload::load_all(path = here::here(), export_all = FALSE)
+
+# You will be able to read your example data file in each of your function examples and tests as follows - see chunks below
+datafile=system.file("M64.RData", package = "grouptheory")
+m64=load(datafile)
+m64
+```
+
+
+# Occurrences
+
+```{r function-Occurrences}
+#' Occurrences
+#'
+#' @param v,M A matrix "M" and a row vector "v".
+#'
+#' @return
+#' The number of times "v" is a row vector of "M".
+#' @export
+#'
+#' @examples
+Occurrences=function(v,M){
+  l=length(v)
+  for(s in 1:l){
+    a=M[,s]
+    ind=which(a==v[s])
+    M=rbind(M[ind,])
+  }
+  return(length(ind))
+}
+```
+
+```{r examples-Occurrences}
+Occurrences(c(2,3),rbind(c(1,2),c(2,3),c(2,3),c(7,8)))
+
+# Example with your dataset in "inst/"
+datafile=system.file("M64.RData",package="grouptheory")
+load(datafile)
+# Apply my function
+Occurrences(c(1,2,4,8,16,32,7,1,1),M64)
+```
+
+```{r tests-Occurrences}
+test_that("Occurrences works properly and show error if needed", {
+  expect_true(Occurrences(c(2,3),rbind(c(1,2),c(2,3),c(2,3),c(7,8)))==2)
+  expect_true(Occurrences(c(2,3),rbind(c()))==0)
+  expect_error(Occurrences("text"))
+})
+
+# Test with your dataset in "inst/"
+datafile=system.file("M64.RData",package="grouptheory")
+load(datafile)
+# Apply test on my function
+test_that("Occurrences works properly with internal dataset", {
+  expect_equal(Occurrences(c(1,2,4,8,16,32,7,1,1),M64),1)
+})
+```
+
+# Smallest
+
+```{r function-Smallest}
+#' Smallest
+#'
+#' @param M A matrix "M".
+#'
+#' @return
+#' The smallest row of "M" in lexicographical order.
+#' @export
+#'
+#' @examples
+Smallest=function(M){
+  n=ncol(M)
+  for(j in 1:n){
+    if(nrow(M)>1){
+      x=M[,j]
+      ind=which(x==min(x))
+      M=rbind(M[ind,])
+    }
+  }
+  return(M[1,])
+}
+```
+
+```{r examples-Smallest}
+Smallest(rbind(c(1,2),c(2,3),c(2,3),c(7,8)))
+
+# Example with your dataset in "inst/"
+datafile=system.file("M64.RData",package="grouptheory")
+load(datafile)
+# Apply my function
+Smallest(M64)
+```
+
+```{r tests-Smallest}
+test_that("Smallest works properly and show error if needed", {
+  expect_equal(Smallest(rbind(c(1,2),c(2,3),c(2,3),c(7,8))),c(1,2))
+})
+
+# Test with your dataset in "inst/"
+datafile=system.file("M64.RData",package="grouptheory")
+load(datafile)
+# Apply test on my function
+test_that("Smallest works properly with internal dataset", {
+  expect_equal(Smallest(M64),c(1,2,4,8,16,32,7,1,1))
+})
+```
+
+# FindRows
+
+```{r function-FindRows}
+#' FindRows
+#'
+#' @param v,M A row vector "v" and a Matrix "M".
+#'
+#' @return
+#' The indices of all the rows of "M" approximately equal to "v". The comparison is made only where "M" is non-negative.
+#' @export
+#'
+#' @examples
+FindRows=function(v,M){
+  l=length(v); ll=ncol(M); out=c()
+  if(l==ll){
+    for(j in 1:nrow(M)){
+      Mj=M[j,]; Dj=abs(Mj-v); Dj=Dj[Mj>=0]
+      if(sum(Dj)<0.5){out=c(out,j)}
+    }
+  }
+  return(out)
+}
+```
+
+```{r examples-FindRows}
+FindRows(c(2,3,5),rbind(c(1,2,7),c(2,3,5),c(2,3,-10),c(7,8,5)))
+
+# Example with your dataset in "inst/"
+datafile=system.file("M64.RData",package="grouptheory")
+load(datafile)
+# Apply my function
+FindRows(c(1,2,4,8,16,32,7,1,1),M64)
+```
+
+```{r tests-FindRows}
+test_that("FindRows works properly and show error if needed", {
+  expect_equal(FindRows(c(2,3,5),rbind(c(1,2,7),c(2,3,5),c(2,3,-10),c(7,8,5))),c(2,3))
+  expect_error(FindRows("text"))
+})
+
+# Test with your dataset in "inst/"
+datafile=system.file("M64.RData",package="grouptheory")
+load(datafile)
+# Apply test on my function
+test_that("FindRows works properly with internal dataset", {
+  expect_equal(FindRows(c(1,2,4,8,16,32,7,1,1),M64),1)
+})
+```
+
+# Divisors
+
+```{r function-Divisors}
+#' Divisors
+#'
+#' @param n A natural number "n".
+#'
+#' @return
+#' The divisors of "n" except 1.
+#' @export
+#'
+#' @examples
+Divisors=function(n){
+  out=c()
+  for(j in 2:n){if(n%%j==0){out=c(out,j)}}
+  return(out)
+}
+```
+
+```{r examples-Divisors}
+Divisors(12)
+```
+
+```{r tests-Divisors}
+test_that("Divisors works properly and show error if needed", {
+  expect_equal(Divisors(12),c(2,3,4,6,12))
+})
+```
+
+# AfromM
+
+```{r function-AfromM}
+#' AfromM
+#'
+#' @param M A list of square matrices "M" with the Identity as its first matrix
+#'
+#' @return
+#' The Cayley table "A" of the Matrix group "M"
+#' @export
+#'
+#' @examples
+AfromM=function(M){
+  lM=length(M)
+  wo=function(i){
+    Mi=M[[i]]; out=c()
+    for(j in 1:lM){
+      A=Mi%*%M[[j]]
+      for(s in 1:lM){
+        if(sum((A-M[[s]])^2)<0.05){a=s;break}
+      }
+      out=c(out,a); rm(a)
+    }
+    return(out)
+  }
+  A=matrix(unlist(parallel::mclapply(c(1:lM),wo,mc.cores=parallel::detectCores())),byrow=T,nrow=lM,ncol=lM)
+  return(A)
+}
+```
+
+# AfromM2
+
+```{r function-AfromM2}
+#' AfromM2
+#'
+#' @param M,silent A list of square matrices "M" with the Identity as its first matrix and an option
+#'
+#' @return
+#' The Cayley table "A" of the Matrix group "M"
+#' @export
+#'
+#' @examples
+AfromM2=function(M,silent=T){
+  lM=length(M); A=c()
+  woo=function(i,j){
+    A=M[[i]]%*%M[[j]]
+    for(s in 1:lM){
+      if(sum((A-M[[s]])^2)<0.05){a=s;break}
+    }
+    return(a)
+  }
+  wo=function(i){
+    woi=function(j){return(woo(i,j))}
+    return(unlist(parallel::mclapply(c(1:lM),woi,mc.cores=parallel::detectCores())))
+  }
+  for(i in 1:lM){
+    A=rbind(A,wo(i))
+    if(silent==F){print(i/lM)}
+  }
+  return(A)
+}
+#list(rbind(c(1,0,0),c(0,1,0),c(0,0,1)),rbind(c(1,0,0),c(0,0,1),c(0,1,0)),rbind(c(0,1,0),c(1,0,0),c(0,0,1)),rbind(c(0,1,0),c(0,0,1),c(1,0,0)),rbind(c(0,0,1),c(1,0,0),c(0,1,0)),rbind(c(0,0,1),c(0,1,0),c(1,0,0)))
+```
+
+# Span
+
+```{r function-Span}
+#' Span
+#'
+#' @param A,w The Cayley table "A" of a group and a vector "w" of elements in the group
+#'
+#' @return
+#' The vector of elements in the subgroup of "A" generated by "w".
+#' @export
+#'
+#' @examples
+Span=function(A,w){
+  n=nrow(A); a=unique(c(1,w))
+  for(s in 1:n){
+    an=unique(sort(A[a,a]))
+    if(length(an)==length(a)){
+      a=an
+      break
+    }
+    a=an
+  }
+  return(a)
+}
+```
+
+# Relabel
+
+```{r function-Relabel}
+#' Relabel
+#'
+#' @param A,w The Cayley table "A" of a group and a vector "w" of elements in a subgroup
+#'
+#' @return
+#' The Cayley table "A" of the subgroup.
+#' @export
+#'
+#' @examples
+Relabel=function(A,w){
+  l=length(w)
+  Aw=A[w,w]; m=Aw[1,]
+  fu=function(i){return(which(m==i))}
+  return(apply(Aw,c(1,2),fu))
+}
+```
+
+# OrderStructure
+
+```{r function-OrderStructure}
+#' OrderStructure
+#'
+#' @param A The Cayley table "A" of a group.
+#'
+#' @return
+#' The number of elements of each possible orders except one. That is of each non-one divisor of the size of the group.
+#' @export
+#'
+#' @examples
+OrderStructure=function(A){
+  l=nrow(A)
+  ord=c()
+  for(j in 2:l){
+    a=j
+    for(s in 1:l){
+      if(a==1){break}
+      a=A[j,a]
+    }
+    ord=c(ord,s)
+  }
+  out=c()
+  for(s in 2:l){
+    if(l%%s==0){
+      out=c(out,length(which(ord==s)))
+    }
+  }
+  return(out)
+}
+```
+
+# Inverse
+
+```{r function-Inverse}
+#' Inverse
+#'
+#' @param A The Cayley table "A" of a group
+#'
+#' @return
+#' The vector with the inverse of all the elements in the group.
+#' @export
+#'
+#' @examples
+Inverse=function(A){
+  n=nrow(A); I=c(1)
+  for(j in 2:n){
+    I=c(I,which(A[j,]==1))
+  }
+  return(I)
+}
+```
+
+# Conjugates
+
+```{r function-Conjugates}
+#' Conjugates
+#'
+#' @param A,I,w The Cayley table "A" of a group, the list of inverses "I", and a sequence of elements "w".
+#'
+#' @return
+#' A matrix whose rows are the different collections of elements in "A" conjugate to "w".
+#' @export
+#'
+#' @examples
+Conjugates=function(A,I,w){
+  n=nrow(A)
+  out=rbind(w)
+  for(g in 2:n){
+    out=rbind(out,sort(A[g,A[w,I[g]]]))
+  }
+  out=unique(out)
+  return(out)
+}
+```
+
+# XfromA
+
+```{r function-XfromA}
+#' XfromA
+#'
+#' @param A,silent The Cayley table "A" of a group and a parameter
+#'
+#' @return
+#' A list of all the subgroups of "A" up to conjugacy. Each element of the list is a vector containing 1. its size, 2. its occurrences, 3. its rank ie the minimal size of a generating set, 4. the vector of the elements of one of its representatives.
+#' @export
+#'
+#' @examples
+XfromA=function(A,silent=T){
+  NewPart=function(A,B){
+    C=c()
+    if(length(B)>0 & length(A)>0){
+      for(i in 1:length(A)){
+        a=A[[i]]; s=1
+        for(j in 1:length(B)){
+          b=B[[j]]
+          if(length(a[-3])==length(b[-3])){if(sum((a[-3]-b[-3])^2)==0){s=0; break}}
+        }
+        if(s==1){C[[length(C)+1]]=a}
+      }
+    }
+    else{C=A}
+    return(C)
+  }
+  up=function(A,IA,O1,neworder){
+    n=nrow(A); L=Divisors(n); ind=c(1:n); ii=length(O1)
+    upsmall=function(i){
+      O2=list(); oi=O1[[i]][-c(1:3)]
+      for(l in L){assign(as.matrix(paste0("W",l)),rbind(c()))}
+      if(length(oi<n)){
+        for(j in ind[-oi]){
+          w=Span(A,sort(c(oi,j))); l=length(w)
+          assign(paste0("W",l),rbind(get(paste0("W",l)),w))
+        }
+      }
+      for(l in L){
+        if(length(get(paste0("W",l)))>0){
+          W=unique(get(paste0("W",l))); V=c()
+          for(j in 1:nrow(W)){
+            w=W[j,]
+            if(Occurrences(w,V)==0){
+              Z=Conjugates(A,IA,w); V=rbind(V,Z)
+              O2[[length(O2)+1]]=c(l,nrow(Z),neworder,Smallest(Z))
+            }
+          }
+        }
+      }
+      for(l in L){rm(list=paste0("W",l))}
+      return(O2)
+    }
+    return(unique(unlist(parallel::mclapply(c(1:ii),upsmall,mc.preschedule=F,mc.cores=parallel::detectCores()),recursive=F)))
+  }
+  
+  IA=Inverse(A); out=1; X0=list(c(1,1,0,1)); if(silent==F){print(c(0,length(X0)))}
+  X1=up(A,IA,X0,1); if(silent==F){print(c(1,length(X1)))}
+  XX=append(X0,X1)
+  for(s in 2:10){
+    assign(paste0("X",s),up(A,IA,get(paste0("X",s-1)),s))
+    for(j in 1:(s-1)){
+      assign(paste0("X",s),NewPart(get(paste0("X",s)),get(paste0("X",s-j))))
+      if(length(get(paste0("X",s)))==0){break}
+    }
+    l=length(get(paste0("X",s)))
+    if(l==0){break}
+    if(silent==F){print(c(s,l))}
+    XX=append(XX,get(paste0("X",s)))
+  }
+  return(XX)
+}
+```
+
+# NumberOfSubgroups
+
+```{r function-NumberOfSubgroups}
+#' NumberOfSubgroups
+#'
+#' @param A The Cayley table "A" of a group
+#'
+#' @return
+#' A couple with the number of subgroups up to conjugacy and overall.
+#' @export
+#'
+#' @examples
+NumberOfSubgroups=function(A){
+  X=XfromA(A); l=length(X); s=0
+  for(j in 1:l){s=s+X[[j]][2]}
+  return(c(l,s))
+}
+```
+
+# IsAbelian
+
+```{r function-IsAbelian}
+#' IsAbelian
+#'
+#' @param A The Cayley table "A" of a group
+#'
+#' @return
+#' 1 if the group is Abelian 0 otherwise.
+#' @export
+#'
+#' @examples
+IsAbelian=function(A){
+  out=0
+  if(sum((A-t(A))^2)<0.5){out=1}
+  return(out)
+}
+```
+
+# EfromAX
+
+```{r function-EfromAX}
+#' EfromAX
+#'
+#' @param A,X,silent The Cayley table "A" of a group and its list of up-to-conjugacy-subgroups "X" and a parameter.
+#' 
+#' @return
+#' The adjacency matrix of its up-to-conjugacy-subgroups, where i is linked to j if there is a subgroup of conjugacy-type i that is an immediate subgroup of some subgroup of conjugacy-type j. By immediate subgroup we mean that there is no intermediate subgroup in between.
+#' @export
+#'
+#' @examples
+EfromAX=function(A,X,silent=T){
+  I=Inverse(A); nn=length(X); ind=1:nn; S=c(); SS=matrix(nrow=nn,ncol=nn)
+  fuu=function(j){return(Conjugates(A,I,X[[j]][-c(1:3)]))}
+  TT=parallel::mclapply(ind,fuu,mc.cores=parallel::detectCores())
+  if(silent==F){print("ok")}
+  for(i in ind){
+    Ti=rbind(TT[[i]]); l1=ncol(Ti); lc=nrow(Ti)
+    fu=function(j){
+      out=0
+      w2=X[[j]][-c(1:3)]; l2=length(w2)
+      if(l1<l2){
+        for(s in 1:lc){
+          if(length(intersect(Ti[s,],w2))==l1){out=1;break}
+        }
+      }
+      return(out)
+    }
+    S=rbind(S,unlist(parallel::mclapply(ind,fu,mc.cores=parallel::detectCores())))
+    if(silent==F){print(i/nn)}
+  }
+  for(i in ind){
+    for(j in ind){
+      o=F
+      if(S[i,j]==1){
+        o=T
+        for(k in ind[-c(i,j)]){
+          if(S[i,k]==1 & S[k,j]==1){o=F;break}
+        }
+      }
+      SS[i,j]=o
+    }
+  }
+  return(SS)
+}
+```
+
+# PrimeFactors
+
+```{r function-PrimeFactors}
+#' PrimeFactors
+#'
+#' @param x A natural number x
+#'
+#' @return
+#' All its divisors of the form p^k
+#' @export
+#'
+#' @examples
+PrimeFactors=function(x){
+  if(x==1){factors=c(1)}
+  else{
+  i=2; factors=c()
+  while(x>=i){
+    if(! x %% i){
+      factors=c(factors,i)
+      x=x/i
+      i=i-1
+    }
+    i=i+1
+  }
+  }
+  return(factors)
+}
+```
+
+# relx
+
+```{r function-relx}
+#' relx
+#'
+#' @param p,q two natural numbers
+#'
+#' @return
+#' t
+#' @export
+#'
+#' @examples
+relx=function(p,q){
+  out=0
+  if(q-p*floor(q/p)==1){out=1}
+  return(out)
+}
+```
+
+# rel
+
+```{r function-rel}
+#' rel
+#'
+#' @param p,q two natural numbers
+#'
+#' @return
+#' t
+#' @export
+#'
+#' @examples
+rel=function(p,q){
+  out=0
+  if(relx(p,q)==1 | relx(q,p)==1){out=1}
+  return(out)
+}
+```
+
+# Efromv
+
+```{r function-Efromv}
+#' Efromv
+#'
+#' @param v a list of primes
+#'
+#' @return
+#' t
+#' @export
+#'
+#' @examples
+Efromv=function(v){
+  l=length(v); E=matrix(rep(0,l^2),nrow=l,ncol=l)
+  for(i in 1:l){
+    for(j in 1:l){
+      if(relx(v[i],v[j])){E[j,i]=1}
+    }
+  }
+  return(E)
+}
+```
+
+# Efromx
+
+```{r function-Efromx}
+#' Efromx
+#'
+#' @param x a natural number
+#'
+#' @return
+#' t
+#' @export
+#'
+#' @examples
+Efromx=function(x){return(Efromv(PrimeFactors(x)))}
+```
+
+# remov
+
+```{r function-remov}
+#' remov
+#'
+#' @param x a natural number
+#'
+#' @return
+#' t
+#' @export
+#'
+#' @examples
+remov=function(x){
+  v=PrimeFactors(x); E=Efromv(v); ind=c()
+  for(j in 1:length(v)){
+    if(length(v[v==v[j]])==1 & sum(E[j,])==0 & sum(E[,j])==0){ind=c(ind,j)}
+  }
+  if(length(ind)>0){out=v[-ind]}
+  else{out=v}
+  return(out)
+}
+```
+
+# Is1Number
+
+```{r function-Is1Number}
+#' Is1Number
+#'
+#' @param x A natural number x
+#'
+#' @return
+#' 1 if there is only one group of order x, 0 otherwise
+#' @export
+#'
+#' @examples
+Is1Number=function(x){
+  v=PrimeFactors(x); u=unique(v); out=1
+  if(length(v)!=length(u)){out=0}
+  else{
+    if(length(remov(x))>0){out=0}
+  }
+  return(out)
+}
+```
+
+# Is2Number
+
+```{r function-Is2Number}
+#' Is2Number
+#'
+#' @param x A natural number
+#'
+#' @return
+#' 1 or 2 if there are exactly two groups of order x, 0 otherwise.
+#' @export
+#'
+#' @examples
+Is2Number=function(x){
+  v=PrimeFactors(x); u=unique(v); out=0
+  if(length(v)==length(u)){
+    if(length(remov(x))==2){out=1}
+  }
+  if(length(u)==length(v)-1){
+    E=Efromv(u)
+    if(sum(E)==0){
+      fr=unlist(lapply(v,function(x){return(length(which(v==x)))}))
+      p=v[fr==2][1]; s=0
+      for(j in 1:length(u)){
+        if(p!=u[j] & rel(p^2,u[j])==1){s=s+1}
+      }
+      if(s==0){out=2}
+    }
+  }
+  return(out)
+}
+```
+
+# Is3Number
+
+```{r function-Is3Number}
+#' Is1Number
+#'
+#' @param x A natural number
+#'
+#' @return
+#' 1 if there is only one group of order x, 0 otherwise
+#' @export
+#'
+#' @examples
+Is3Number=function(x){
+  v=PrimeFactors(x); u=unique(v); out=0
+  if(length(v)==length(u)){
+    uu=remov(x)
+    if(length(uu)==3){
+      if(sum(abs(Efromv(uu)-rbind(c(0,0,0),c(1,0,0),c(0,1,0))))==0){out=1}
+    }
+  }
+  if(length(u)==length(v)-1){
+    E=Efromv(u)
+    if(sum(E)==0){
+      fr=unlist(lapply(v,function(x){return(length(which(v==x)))}))
+      p=v[fr==2][1]; s=0
+      for(j in 1:length(u)){
+        if(p!=u[j] & rel(p^2,u[j])==1){s=s+1}
+      }
+      if(s==1){out=2}
+    }
+  }
+  return(out)
+}
+```
+
+# GroupId
+
+```{r function-GropuId}
+#' GroupId
+#'
+#' @param A,w,rk The Cayley table "A" of a group, a vector "w" of elements of a subgroup and the rank of this subgroup.
+#'
+#' @return the group id
+#' 
+#' @export
+#'
+#' @examples
+GroupId=function(A,w,rk){
+  g1=c(1,2,3,5,7,11,13,15,17,19,23,29,31,33,35,37,41,43,47,51,53,59,61,65,67,69,71,73,77,79,83,85,87,89,91,95,97,101,103,107,109,113,115,119,123,127,131,133,137,139,141,143,145,149,151,157,159,161,163,167,173,177,179,181,185,187,191,193,197,199,209,211,213,215,217,221,223,227,229,233,235,239,241,247,249,251,255,257,259,263,265,267,269,271,277,281,283,287,293,295,299,303,307,311,313,317,319,321,323,329,331,335,337,339,341,345,347,349,353,359,365,367,371,373,377,379,383,389,391,393,395,397,401,403,407,409,411,413,415,419,421,427,431,433,435,437,439,443,445,447,449,451,455,457,461,463,467,469,473,479,481,485,487,491,493,499,501,503,509,511,515,517,519,521,523,527,533,535,537,541,545,547,551,553,557,559,561,563,565,569,571,573,577,581,583,587,589,591,593,595,599,601,607,611,613,617,619,623,629,631,635,641,643,647,649,653,659,661,665,667,671,673,677,679,681,683,685,691,695,697,699,701,703,705,707,709,713,717,719,721,727,731,733,739,743,745,749,751,753,757,761,763,767,769,771,773,779,781,785,787,789,793,795,797,799,803,805,807,809,811,815,817,821,823,827,829,835,839,843,851,853,857,859,863,865,869,871,877,879,881,883,885,887,893,895,899,901,907,911,913,917,919,923,929,933,937,941,943,947,949,951,953,957,959,965,967,971,973,977,983,985,989,991,995,997,1001,1003,1007,1009,1013,1019,1021,1031,1033,1037,1039,1041,1043,1049,1051,1057,1059,1061,1063,1067,1069,1073,1077,1079,1087,1091,1093,1097,1099,1103,1105,1109,1111,1115,1117,1121,1123,1129,1133,1135,1139,1141,1145,1147,1149,1151,1153,1157,1159,1163,1165,1167,1169,1171,1173,1177,1181,1187,1189,1193,1195,1199,1201,1203,1207,1211,1213,1217,1219,1223,1229,1231,1235,1237,1241,1243,1245,1247,1249,1253,1257,1259,1261,1267,1271,1273,1277,1279,1283,1285,1289,1291,1293,1295,1297,1301,1303,1307,1309,1313,1315,1319,1321,1327,1329,1333,1335,1337,1339,1343,1345,1347,1349,1351,1353,1357,1361,1363,1367,1373,1381,1383,1385,1387,1391,1393,1397,1399,1401,1403,1409,1411,1415,1417,1423,1427,1429,1433,1437,1439,1441,1447,1451,1453,1457,1459,1463,1465,1469,1471,1473,1479,1481,1483,1487,1489,1493,1495,1499,1501,1507,1509,1511,1513,1517,1523,1527,1529,1531,1535,1537,1541,1543,1547,1549,1551,1553,1559,1561,1563,1565,1567,1571,1577,1579,1583,1585,1589,1591,1597,1601,1603,1605,1607,1609,1613,1615,1619,1621,1627,1631,1633,1637,1639,1643,1645,1649,1651,1657,1661,1663,1667,1669,1671,1679,1685,1687,1689,1691,1693,1695,1697,1699,1707,1709,1717,1721,1723,1727,1729,1733,1735,1739,1741,1745,1747,1749,1753,1757,1759,1761,1763,1765,1769,1777,1779,1781,1783,1787,1789,1793,1795,1797,1799,1801,1807,1811,1817,1819,1823,1829,1831,1835,1837,1841,1843,1847,1851,1853,1855,1861,1865,1867,1871,1873,1877,1879,1883,1885,1889,1891,1895,1897,1901,1903,1907,1909,1913,1915,1919,1921,1923,1927,1931,1933,1937,1939,1941,1943,1945,1947,1949,1951,1955,1957,1959,1961,1963,1969,1973,1977,1979,1981,1985,1987,1991,1993,1997,1999,2001,2003,2011,2017,2021,2027,2029,2031,2033,2039,2045,2047)
+  g2ab=c(4,9,25,45,49,99,121,153,169,175,207,245,261,289,325,361,369,423,425,475,477,529,531,539,575,637,639,725,747,765,801,833,841,845,847,909,925,931,961,963,1017,1035,1075,1127,1175,1179,1233,1305,1325,1341,1369,1445,1475,1503,1519,1557,1573,1611,1675,1681,1683,1719,1773,1813,1825,1849,1859,1975,2009,2023,2043)
+  g2no=c(6,10,14,21,22,26,34,38,39,46,55,57,58,62,74,82,86,93,94,105,106,111,118,122,129,134,142,146,155,158,165,166,178,183,194,195,201,202,203,205,206,214,218,219,226,231,237,253,254,262,274,278,285,291,298,301,302,305,309,314,326,327,334,346,355,357,358,362,381,382,385,386,394,398,417,422,429,446,453,454,458,466,471,478,482,483,489,497,502,505,514,526,538,542,543,554,555,562,566,579,586,597,614,615,622,626,627,633,634,645,655,662,663,669,674,687,689,694,698,706,715,718,723,734,737,746,755,758,759,766,778,791,794,802,813,818,831,838,842,849,861,862,866,878,886,889,897,898,905,914,921,922,926,934,935,939,955,958,969,974,979,982,987,993,998,1005,1006,1011,1015,1018,1023,1027,1042,1045,1046,1047,1055,1065,1081,1082,1085,1094,1095,1101,1113,1114,1119,1126,1131,1137,1138,1142,1154,1174,1185,1186,1191,1198,1202,1205,1214,1221,1226,1227,1234,1238,1239,1255,1262,1263,1282,1286,1294,1299,1306,1311,1317,1318,1322,1346,1354,1355,1366,1371,1379,1382,1389,1402,1405,1418,1419,1435,1438,1454,1455,1461,1466,1477,1478,1486,1497,1502,1505,1514,1515,1522,1538,1545,1546,1555,1569,1574,1581,1594,1595,1599,1618,1622,1623,1635,1641,1642,1646,1653,1654,1655,1658,1673,1678,1703,1706,1711,1713,1714,1718,1726,1731,1743,1751,1754,1762,1766,1771,1774,1785,1803,1814,1821,1822,1833,1838,1839,1857,1858,1869,1874,1882,1887,1893,1894,1905,1906,1929,1934,1942,1954,1965,1966,1967,1982,1983,1994,2005,2013,2015,2018,2019,2026,2035,2038,2041,2042)
+  g3ab=c(75,363,867,1183,1275,1587,1725,1805)
+  g3no=c(609,1265,1491)
+  go=setdiff(c(1:127,168,200),c(g1,g2ab,g2no,g3ab,g3no,64,96))
+  
+  out=0
+  l=length(w)
+  if(l%in%g1 | Is1Number(l)==1 | rk==1){out=-1} #cyclic
+  if((l%in%g2ab | Is2Number(l)==2) & rk>1){out=-2} #the only non cyclic abelian group
+  if((l%in%g2no | Is2Number(l)==1) & rk>1 & l%%2==0){out=-3} #dihedral
+  if((l%in%g2no | Is2Number(l)==1) & rk>1 & l%%2!=0){out=-4} #the only non abelian group
+  if((l%in%g3ab | Is3Number(l)==2) & rk>1){
+    Aw=Relabel(A,w)
+    ab=IsAbelian(Aw)
+    if(ab==1){out=-5} #the only non cyclic abelian group
+    if(ab==0){out=-6} #the only non abelian group
+  }
+  if((l%in%g3no | Is3Number(l)==1) & rk>1){out=-7
+    #Aw=Relabel(A,w)
+    #ab=IsAbelian(Aw)
+    #if(ab==1){out=-5} #the only non cyclic abelian group
+    #if(ab==0){out=-6} #the only non abelian group
+  }
+  if(l%in%c(go,64,96,128,144,160,192,240,288,320,360,384,400,480,576,600,640,720,960,1200,1440)){#256,1152,
+      #216,224,324,336,352,416,432,448,486,504,512,528,540,544,560,576,608,624,648,672,704,729,736,756,768,784,792,800,810,816,832,840,864,880,896,900,912,928,936,972,992,1000,
+    #############################
+if(l%in%go){
+#4: 28,30,44,63,66,70,76,92,102,117,124,130,138,154,170,172,174,182,188,190,230,236,238,246,266,268,275,279,282,284,286,290,315,316,318,322,332,354,370,374,387,412,418,426,428,430,434,442,465,470,494,495,498,508
+M28=cbind(# 2^2 7
+  c(1,1,15,3),#2
+  c(14,2,0,0),#4
+  c(6,6,6,6),#7
+  c(6,6,6,18),#14
+  c(0,12,0,0),#28
+  c(2,1,2,2),#rk
+  c(0,1,0,1)#Ab
+)
+M30=cbind(# 2 3 5
+  c(3,5,15,1),#2
+  c(2,2,2,2),#3
+  c(4,4,4,4),#5
+  c(0,10,0,2),#6
+  c(12,0,0,4),#10
+  c(8,8,8,8),#15
+  c(0,0,0,8),#30
+  c(2,2,2,1),#rk
+  c(0,0,0,1)#Ab
+)
+M44=cbind(# 2^2 11
+  c(1,1,23,3),#2
+  c(22,2,0,0),#4
+  c(10,10,10,10),#11
+  c(10,10,10,30),#22
+  c(0,20,0,0),#44
+  c(2,1,2,2),#rk
+  c(0,1,0,1)#Ab
+)
+M63=cbind(# 3^2 7
+  c(2,2,44,8),#3
+  c(6,6,6,6),#7
+  c(42,6,0,0),#9
+  c(12,12,12,48),#21
+  c(0,36,0,0),#63
+  c(2,1,2,2),#rk
+  c(0,1,0,1)#Ab
+)
+M66=cbind(# 2 3 11
+  c(3,11,33,1),#2
+  c(2,2,2,2),#3
+  c(0,22,0,2),#6
+  c(10,10,10,10),#11
+  c(30,0,0,10),#22
+  c(20,20,20,20),#33
+  c(0,0,0,20),#66
+  c(2,2,2,1),#rk
+  c(0,0,0,1)#Ab
+)
+M70=cbind(# 2 5 7
+  c(5,7,35,1),#2
+  c(4,4,4,4),#5
+  c(6,6,6,6),#7
+  c(0,28,0,4),#10
+  c(30,0,0,6),#14
+  c(24,24,24,24),#35
+  c(0,0,0,24),#70
+  c(2,2,2,1),#rk
+  c(0,0,0,1)#Ab
+)
+M76=cbind(# 2^2 19
+  c(1,1,39,3),#2
+  c(38,2,0,0),#4
+  c(18,18,18,18),#19
+  c(18,18,18,54),#38
+  c(0,36,0,0),#76
+  c(2,1,2,2),#rk
+  c(0,1,0,1)#Ab
+)
+M92=cbind(# 2^2 23
+  c(1,1,47,3),#2
+  c(46,2,0,0),#4
+  c(22,22,22,22),#23
+  c(22,22,22,66),#46
+  c(0,44,0,0),#92
+  c(2,1,2,2),#rk
+  c(0,1,0,1)#Ab
+)
+M102=cbind(# 2 3 17
+  c(3,17,51,1),#2
+  c(2,2,2,2),#3
+  c(0,34,0,2),#6
+  c(16,16,16,16),#17
+  c(48,0,0,16),#34
+  c(32,32,32,32),#51
+  c(0,0,0,32),#102
+  c(2,2,2,1),#rk
+  c(0,0,0,1)#Ab
+)
+M117=cbind(# 3^2 13
+  c(2,2,80,8),#3
+  c(78,6,0,0),#9
+  c(12,12,12,12),#13
+  c(24,24,24,96),#39
+  c(0,72,0,0),#117
+  c(2,1,2,2),#rk
+  c(0,1,0,1)#Ab
+)
+M124=cbind(# 2^2 31
+  c(1,1,63,3),#2
+  c(62,2,0,0),#4
+  c(30,30,30,30),#31
+  c(30,30,30,90),#62
+  c(0,60,0,0),#124
+  c(2,1,2,2),#rk
+  c(0,1,0,1)#Ab
+)
+#5: 8,12,18,20,27,50,52,68,98,116,125,135,148,164,171,212,242,244,273,292,297,333,338,343,356,388,399,404,436,452,459
+M8=cbind(# 2^3
+  c(1,3,5,1,7),#2
+  c(2,4,2,6,0),#4
+  c(4,0,0,0,0),#8
+  c(1,2,2,2,3),#rk
+  c(1,1,0,0,1)#Ab
+)
+M12=cbind(# 2^2 3
+  c(1,1,3,7,3),#2
+  c(2,2,8,2,2),#3
+  c(6,2,0,0,0),#4
+  c(2,2,0,2,6),#6
+  c(0,4,0,0,0),#12
+  c(2,1,2,2,2),#rk
+  c(0,1,0,0,1)#Ab
+)
+M18=cbind(# 2 3^2
+  c(9,1,3,9,1),#2
+  c(2,2,8,8,8),#3
+  c(0,2,6,0,8),#6
+  c(6,6,0,0,0),#9
+  c(0,6,0,0,0),#18
+  c(2,1,2,3,2),#rk
+  c(0,1,0,0,1)#Ab
+)
+M20=cbind(# 2^2 5
+  c(1,1,5,11,3),#2
+  c(10,2,10,0,0),#4
+  c(4,4,4,4,4),#5
+  c(4,4,0,4,12),#10
+  c(0,8,0,0,0),#20
+  c(2,1,2,2,2),#rk
+  c(0,1,0,0,1)#Ab
+)
+M27=cbind(# 3^3
+  c(2,8,26,8,26),#3
+  c(6,18,0,18,0),#9
+  c(18,0,0,0,0),#27
+  c(1,2,2,2,3),#rk
+  c(1,1,0,0,1)#Ab
+)
+M50=cbind(# 2 5^2
+  c(25,1,5,25,1),#2
+  c(4,4,24,24,24),#5
+  c(0,4,20,0,24),#10
+  c(20,20,0,0,0),#25
+  c(0,20,0,0,0),#50
+  c(2,1,2,3,2),#rk
+  c(0,1,0,0,1)#Ab
+)
+M52=cbind(# 2^2 13
+  c(1,1,13,27,3),#2
+  c(26,2,26,0,0),#4
+  c(12,12,12,12,12),#13
+  c(12,12,0,12,36),#26
+  c(0,24,0,0,0),#52
+  c(2,1,2,2,2),#rk
+  c(0,1,0,0,1)#Ab
+)
+M68=cbind(# 2^2 17
+  c(1,1,17,35,3),#2
+  c(34,2,34,0,0),#4
+  c(16,16,16,16,16),#17
+  c(16,16,0,16,48),#34
+  c(0,32,0,0,0),#68
+  c(2,1,2,2,2),#rk
+  c(0,1,0,0,1)#Ab
+)
+M98=cbind(#2*7^2
+  c(49,1,7,49,1),#2
+  c(6,6,48,48,48),#7
+  c(0,6,42,0,48),#14
+  c(42,42,0,0,0),#49
+  c(0,42,0,0,0),#98
+  c(2,1,2,3,2),#rk
+  c(0,1,0,0,1)#Ab
+)
+M116=cbind(#2^2*29
+  c(1,1,29,59,3),#2
+  c(58,2,58,0,0),#4
+  c(28,28,28,28,28),#29
+  c(28,28,0,28,84),#58
+  c(0,56,0,0,0),#116
+  c(2,1,2,2,2),#rk
+  c(0,1,0,0,1)#Ab
+)
+M125=cbind(#5^3
+  c(4,24,124,24,124),#5
+  c(20,100,0,100,0),#25
+  c(100,0,0,0,0),#125
+  c(1,2,2,2,3),#rk
+  c(1,1,0,0,1)#Ab
+)
+#6: 42,78,110,114,147,186,222,225,258,310,366,402,406,410,438,474,506,507,525,582,602,610,618,654,710,735,762,834,906,942,975,978,994,1010
+M42=cbind(
+  c(7,1,3,7,21,1),#2
+  c(14,14,2,2,2,2),#3
+  c(14,14,0,14,0,2),#6
+  c(6,6,6,6,6,6),#7
+  c(0,6,18,0,0,6),#14
+  c(0,0,12,12,12,12),#21
+  c(0,0,0,0,0,12),#42
+  c(2,2,2,2,2,1),#rk
+  c(0,0,0,0,0,1)#Ab
+)
+M78=cbind(
+  c(13,1,3,13,39,1),#2
+  c(26,26,2,2,2,2),#3
+  c(26,26,0,26,0,2),#6
+  c(12,12,12,12,12,12),#13
+  c(0,12,36,0,0,12),#26
+  c(0,0,24,24,24,24),#39
+  c(0,0,0,0,0,24),#78
+  c(2,2,2,2,2,1),#rk
+  c(0,0,0,0,0,1)#Ab
+)
+M110=cbind(
+  c(11,1,5,11,55,1),#2
+  c(44,44,4,4,4,4),#5
+  c(44,44,0,44,0,4),#10
+  c(10,10,10,10,10,10),#11
+  c(0,10,50,0,0,10),#22
+  c(0,0,40,40,40,40),#55
+  c(0,0,0,0,0,40),#110
+  c(2,2,2,2,2,1),#rk
+  c(0,0,0,0,0,1)#Ab
+)
+M114=cbind(
+  c(19,1,3,19,57,1),#2
+  c(38,38,2,2,2,2),#3
+  c(38,38,0,38,0,2),#6
+  c(18,18,18,18,18,18),#19
+  c(0,18,54,0,0,18),#38
+  c(0,0,36,36,36,36),#57
+  c(0,0,0,0,0,36),#114
+  c(2,2,2,2,2,1),#rk
+  c(0,0,0,0,0,1)#Ab
+)
+#7: 375,605,903,1705
+#8: 510,690,870,910,1122,1190,1330,1395,1410,1590,1610,1770,1914,2002
+#9: 308,532,644,836,868,1316,1364,1652,1748,1815,1876,1892
+#10: 90,132,198,276,306,350,414,490,522,564,650,708,738,846,850,852,950,954,996,1062,1078,1150,1274,1278,1284,1450,1485,1494,1572,1602,1666,1690,1694,1818,1850,1862,1926,2004,2034
+M90=cbind(#10
+  c(9,5,45,1,5,3,15,9,45,1),#2
+  c(2,2,2,2,8,8,8,8,8,8),#3
+  c(4,4,4,4,4,4,4,4,4,4),#5
+  c(0,10,0,2,40,6,30,0,0,8),#6
+  c(6,6,6,6,0,0,0,0,0,0),#9
+  c(36,0,0,4,0,12,0,36,0,4),#10
+  c(8,8,8,8,32,32,32,32,32,32),#15
+  c(0,30,0,6,0,0,0,0,0,0),#18
+  c(0,0,0,8,0,24,0,0,0,32),#30
+  c(24,24,24,24,0,0,0,0,0,0),#45
+  c(0,0,0,24,0,0,0,0,0,0),#90
+  c(2,2,2,1,2,2,2,3,3,2),#rk
+  c(0,0,0,1,0,0,0,0,0,1)#Ab
+)
+#11: 140  364  380  460  476  572  748  819  860  940  988 1036 1148 1180 1196 1276 1292 1340 1484 1564 1580 1612 1628 1660 1708 1804 1953 2044
+#12: 88  152  184  196  204  210  248  330  344  348  376  390  462  472  484  492  536  568  570  632  636  664  714  770  824  856  858  966 1016 1048 1068 1110 1112 1208 1212 1230 1254 1290 1304 1326 1336 1356 1430 1432 1444 1518 1528 1592 1644 1688 1722 1784 1788 1794 1816 1870 1912 1938 1974 2008 2010 2030 2046
+M88=cbind(#12
+  c(1,1,1,23,45,3,25,3,5,1,47,7),#2
+  c(2,2,46,24,2,44,22,4,2,6,0,0),#4
+  c(44,4,0,0,0,0,0,0,0,0,0,0),#8
+  c(10,10,10,10,10,10,10,10,10,10,10,10),#11
+  c(10,10,10,10,10,30,30,30,50,10,30,70),#22
+  c(20,20,20,20,20,0,0,40,20,60,0,0),#44
+  c(0,40,0,0,0,0,0,0,0,0,0,0),#88
+  c(2,1,2,2,2,2,2,2,2,2,3,3),#rk
+  c(0,1,0,0,0,0,0,1,0,0,0,1)#Ab
+)
+
+#sub!!
+#13: 56   60  150  189  441  726  837  945 1012 1161 1204 1521 1575 1647 1734 1809 1988
+M56=cbind(#13
+  c(1,1,1,15,29,3,17,3,5,1,7,31,7),#2
+  c(2,2,30,16,2,28,14,4,2,6,0,0,0),#4
+  c(6,6,6,6,6,6,6,6,6,6,48,6,6),#7
+  c(28,4,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(6,6,6,6,6,18,18,18,30,6,0,18,42),#14
+  c(12,12,12,12,12,0,0,24,12,36,0,0,0),#28
+  c(0,24,0,0,0,0,0,0,0,0,0,0,0),#56
+  c(8,8,12,16,16,16,16,16,16,12,6,32,32),#sub
+  c(2,1,2,2,2,2,2,2,2,2,2,3,3),#rk
+  c(0,1,0,0,0,0,0,1,0,0,0,0,1)#Ab
+)
+M60=cbind(#13
+  c(1,1,1,1,15,5,5,23,3,11,7,31,3),#2
+  c(2,2,2,2,20,2,2,2,8,2,2,2,2),#3
+  c(6,10,30,2,0,10,30,0,0,0,0,0,0),#4
+  c(4,4,4,4,24,4,4,4,4,4,4,4,4),#5
+  c(2,2,2,2,0,10,10,10,0,22,2,2,6),#6
+  c(4,4,4,4,0,0,0,12,12,4,28,4,12),#10
+  c(0,20,0,4,0,20,0,0,0,0,0,0,0),#12
+  c(8,8,8,8,0,8,8,8,32,8,8,8,8),#15
+  c(24,0,0,8,0,0,0,0,0,0,0,0,0),#20
+  c(8,8,8,8,0,0,0,0,0,8,8,8,24),#30
+  c(0,0,0,16,0,0,0,0,0,0,0,0,0),#60
+  c(12,12,12,12,9,12,12,20,10,20,20,20,20),#sub
+  c(2,2,2,1,2,2,2,2,2,2,2,2,2),#rk
+  c(0,0,0,1,0,0,0,0,0,0,0,0,1)#Ab
+)
+#14: 16   36   40  104  232  296  351  424  488  808  872 1125 1192 1197 1256 1384 1448 1576 1755 1832
+M16=cbind(#14
+  c(1,3,7,3,3,3,9,5,1,7,11,3,7,15),#2
+  c(2,12,8,12,4,4,2,6,10,8,4,12,8,0),#4
+  c(4,0,0,0,8,8,4,4,4,0,0,0,0,0),#8
+  c(8,0,0,0,0,0,0,0,0,0,0,0,0,0),#16
+  c(5,15,17,13,11,10,11,10,9,27,27,19,20,67),#sub
+  c(1,2,2,2,2,2,2,2,2,3,3,3,3,4),#rk
+  c(1,1,0,0,1,0,0,0,0,1,0,0,0,1)#Ab
+)
+M36=cbind(#14
+  c(1,1,3,19,3,1,1,1,9,15,3,7,19,3),#2
+  c(2,2,2,2,2,8,8,8,8,8,26,8,8,8),#3
+  c(18,2,0,0,0,6,18,2,18,0,0,0,0,0),#4
+  c(2,2,6,2,6,8,8,8,0,12,6,20,8,24),#6
+  c(6,6,24,6,6,0,0,0,0,0,0,0,0,0),#9
+  c(0,4,0,0,0,12,0,16,0,0,0,0,0,0),#12
+  c(6,6,0,6,18,0,0,0,0,0,0,0,0,0),#18
+  c(0,12,0,0,0,0,0,0,0,0,0,0,0,0),#36
+  c(9,9,8,15,15,14,18,18,10,22,14,22,30,30),#sub
+  c(2,1,2,2,2,2,3,2,2,2,2,2,3,2),#rk
+  c(0,1,0,0,1,0,0,1,0,0,0,0,0,1)#Ab
+)
+M40=cbind(#14
+  c(1,1,1,1,11,21,3,13,3,5,1,11,23,7),#2
+  c(2,2,10,22,12,2,20,10,4,2,6,20,0,0),#4
+  c(4,4,4,4,4,4,4,4,4,4,4,4,4,4),#5
+  c(20,4,20,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(4,4,4,4,4,4,12,12,12,20,4,4,12,28),#10
+  c(8,8,0,8,8,8,0,0,16,8,24,0,0,0),#20
+  c(0,16,0,0,0,0,0,0,0,0,0,0,0,0),#40
+  c(8,8,8,12,16,16,16,16,16,16,12,16,32,32),#sub
+  c(2,1,2,2,2,2,2,2,2,2,2,2,3,3),#rk
+  c(0,1,0,0,0,0,0,0,1,0,0,0,0,1)#Ab
+)
+M104=cbind(#14
+  c(1,1,1,1,27,53,3,29,3,5,1,27,55,7),#2
+  c(2,2,26,54,28,2,52,26,4,2,6,52,0,0),#4
+  c(52,4,52,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(12,12,12,12,12,12,12,12,12,12,12,12,12,12),#13
+  c(12,12,12,12,12,12,36,36,36,60,12,12,36,84),#26
+  c(24,24,0,24,24,24,0,0,48,24,72,0,0,0),#52
+  c(0,48,0,0,0,0,0,0,0,0,0,0,0,0),#104
+  c(8,8,8,12,16,16,16,16,16,16,12,16,32,32),#sub
+  c(2,1,2,2,2,2,2,2,2,2,2,2,3,3),#rk
+  c(0,1,0,0,0,0,0,0,1,0,0,0,0,1)#Ab
+)
+#15: 24,54,81,84,136,220,228,250,260  328  340  372  513  516  580  584  620  625  686  712  740  776  804  884  891  904  948  999 1060 1096 1236 1375 1377 1420 1460 1508 1524 1544 1668 1780 1812 1863 1864 1911 1924 1928 1940 1956 1971 1972
+M24=cbind(#15 (2^3 3)
+  c(1,1,1,1,7,13,3,9,3,5,1,9,7,15,7),#2
+  c(2,2,8,2,2,2,2,2,2,2,2,8,8,2,2),#3
+  c(2,2,6,14,8,2,12,6,4,2,6,6,0,0,0),#4
+  c(2,2,8,2,2,2,6,6,6,10,2,0,8,6,14),#6
+  c(12,4,0,0,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(4,4,0,4,4,4,0,0,8,4,12,0,0,0,0),#12
+  c(0,8,0,0,0,0,0,0,0,0,0,0,0,0,0),#24
+  c(8,8,7,12,16,16,16,16,16,16,12,11,12,32,32),#sub
+  c(2,1,2,2,2,2,2,2,2,2,2,2,2,3,3),#rk
+  c(0,1,0,0,0,0,0,0,1,0,0,0,0,0,1)#Ab
+)
+M54=cbind(#15 (2 3^3)
+  c(27,1,9,3,9,9,27,9,1,1,1,3,9,27,1),#2
+  c(2,2,8,8,26,8,8,26,8,26,8,26,26,26,26),#3
+  c(0,2,18,6,18,18,0,18,8,26,8,24,18,0,26),#6
+  c(6,6,18,18,0,18,18,0,18,0,18,0,0,0,0),#9
+  c(0,6,0,18,0,0,0,0,18,0,18,0,0,0,0),#18
+  c(18,18,0,0,0,0,0,0,0,0,0,0,0,0,0),#27
+  c(0,18,0,0,0,0,0,0,0,0,0,0,0,0,0),#54
+  c(8,8,14,14,16,13,20,22,20,22,16,32,32,56,56),#sub
+  c(2,1,2,2,2,2,3,3,2,2,2,2,3,4,3),#rk
+  c(0,1,0,0,0,0,0,0,1,0,0,0,0,0,1)#Ab
+)
+M81=cbind(#15 (3^4)
+  c(2,8,26,8,8,8,44,26,62,8,26,80,26,26,80),#3
+  c(6,72,54,72,18,18,36,54,18,72,54,0,54,54,0),#9
+  c(18,0,0,0,54,54,0,0,0,0,0,0,0,0,0),#27
+  c(54,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#81
+  c(5,23,23,17,14,12,20,14,16,13,50,56,38,33,212),#sub
+  c(1,2,2,2,2,2,2,2,2,2,3,3,3,3,4),#rk
+  c(1,1,0,0,1,0,0,0,0,0,1,0,0,0,1)#Ab
+)
+M84=cbind(#15 (2^2 3 7)
+  c(1,1,1,1,1,1,15,31,3,3,3,15,7,43,3),#2
+  c(14,14,2,2,2,2,14,2,14,8,56,2,2,2,2),#3
+  c(14,2,6,14,42,2,0,0,0,0,0,0,0,0,0),#4
+  c(14,14,2,2,2,2,42,14,42,0,0,30,2,2,6),#6
+  c(6,6,6,6,6,6,6,6,6,6,6,6,6,6,6),#7
+  c(28,28,0,28,0,4,0,0,0,0,0,0,0,0,0),#12
+  c(6,6,6,6,6,6,6,18,18,18,18,6,42,6,18),#14
+  c(0,0,12,12,12,12,0,12,0,48,0,12,12,12,12),#21
+  c(0,12,36,0,0,12,0,0,0,0,0,0,0,0,0),#28
+  c(0,0,12,12,12,12,0,0,0,0,0,12,12,12,36),#42
+  c(0,0,0,0,0,24,0,0,0,0,0,0,0,0,0),#84
+  c(12,12,12,12,12,12,20,20,20,10,10,20,20,20,20),#sub
+  c(2,2,2,2,2,1,2,2,2,2,2,2,2,2,2),#rk
+  c(0,0,0,0,0,1,0,0,0,0,0,0,0,0,1)#Ab
+)
+#16: 100,126,234,405,550,558,676,774,812,1098,1156,1206,1218,1422,1550,1746,1854
+M100=cbind(#16 (2^2 5^2)
+  c(1,1,25,51,3,1,1,1,5,5,25,25,35,11,51,3),#2
+  c(50,2,50,0,0,10,50,2,10,50,50,50,0,0,0,0),#4
+  c(4,4,4,4,4,24,24,24,24,24,24,24,24,24,24,24),#5
+  c(4,4,0,4,12,24,24,24,20,20,0,0,40,64,24,72),#10
+  c(0,8,0,0,0,40,0,48,40,0,0,0,0,0,0,0),#20
+  c(20,20,20,20,20,0,0,0,0,0,0,0,0,0,0,0),#25
+  c(20,20,0,20,60,0,0,0,0,0,0,0,0,0,0,0),#50
+  c(0,40,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#100
+  c(9,9,9,15,15,16,24,24,13,13,24,16,24,24,40,40),#sub
+  c(2,1,2,2,2,2,3,2,2,2,3,2,2,2,3,2),#rk
+  c(0,1,0,0,1,0,0,1,0,0,0,0,0,0,0,1)#Ab
+)
+M126=cbind(#16 (2 3^2 7)
+  c(7,1,9,7,63,1,7,3,21,1,7,3,21,9,63,1),#2
+  c(2,2,2,2,2,2,44,44,44,44,8,8,8,8,8,8),#3
+  c(14,2,0,14,0,2,56,42,42,44,56,6,42,0,0,8),#6
+  c(6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6),#7
+  c(42,42,6,6,6,6,0,0,0,0,0,0,0,0,0,0),#9
+  c(0,6,54,0,0,6,0,18,0,6,0,18,0,54,0,6),#14
+  c(42,42,0,42,0,6,0,0,0,0,0,0,0,0,0,0),#18
+  c(12,12,12,12,12,12,12,12,12,12,48,48,48,48,48,48),#21
+  c(0,12,0,0,0,12,0,0,0,12,0,36,0,0,0,48),#42
+  c(0,0,36,36,36,36,0,0,0,0,0,0,0,0,0,0),#63
+  c(0,0,0,0,0,36,0,0,0,0,0,0,0,0,0,0),#126
+  c(12,12,12,12,12,12,24,18,18,24,24,18,18,24,24,24),#sub
+  c(2,2,2,2,2,1,2,2,2,2,2,2,2,3,3,2),#rk
+  c(0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1)#Ab
+)
+#17: 675
+#18: 156  342  444  666  732  876  930 1164 1308 1314 1830 1884 1962
+#19: 1029
+#20: 820 1220 1530 2020
+#21: 1875
+#23: 294 1014
+#24: 546  798 1302 1482 1554
+#27: 1210
+#29: 1380
+#30: 270  396  594  828  918  990 1242 1566 1692 1750 1806
+#32: 630 1170 1386
+#34: 450  924  980 1672 1932
+#35: 616 1064 1288 1736 1820
+#36: 612  700 1044 1476 1540 1710 1900 1908
+#37: 180 1020 1740
+#38: 1372 1650
+#39: 264  552  750  760  920 1128 1144 1416 1704 1720 1880 1976 1992
+#40: 280  660  728 1050 1428 1452 1716 1950
+
+M32=cbind(#51 2^5
+  c(1,7,3,3,7,11,11,3,11,3,7,3,3,3,3,3,3,17,9,1,7,15,7,7,11,3,19,15,7,11,11,3,7,19,3,7,7,7,19,11,3,11,15,7,15,23,7,15,19,11,31),#2
+  c(2,24,12,12,8,20,4,12,12,20,16,12,20,20,4,4,4,2,10,18,24,16,24,24,20,28,12,16,24,20,20,28,24,12,28,8,8,8,4,12,20,12,8,16,16,8,24,16,12,20,0),#4
+  c(4,0,16,16,16,0,16,16,8,8,8,16,8,8,24,8,8,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,16,16,8,8,8,8,8,8,0,0,0,0,0,0,0),#8
+  c(8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,16,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#16
+  c(16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#32
+  c(6,38,22,20,25,26,23,19,25,21,22,19,18,18,15,14,13,14,13,12,54,66,46,38,47,35,65,47,37,39,38,28,30,54,34,38,34,31,38,34,30,31,34,30,118,118,78,82,83,73,374),#sub
+  c(1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5),#rk
+  c(1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1)#Ab
+)
+M48=cbind(#52 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  c(1,1,3,7,7,13,25,1,3,3,3,3,3,15,17,5,13,1,7,3,7,3,3,3,9,5,1,1,13,7,7,3,7,3,15,27,15,23,11,7,19,7,19,7,11,3,7,19,15,15,31,15),#2
+  c(2,2,32,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,8,8,8,8,8,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,8,8,32,2,2),#3
+  c(2,2,12,8,8,14,2,26,4,4,28,28,28,16,2,14,6,18,24,12,8,12,4,4,2,6,10,18,6,24,8,12,8,28,16,4,16,8,20,24,12,24,12,8,4,12,8,12,0,0,0,0),#4
+  c(2,2,0,2,2,2,2,2,6,6,6,6,6,6,10,10,2,2,14,6,14,6,6,6,18,10,2,8,8,8,8,24,8,6,6,6,6,10,10,2,2,14,14,14,22,6,14,8,24,0,14,30),#6
+  c(4,4,0,16,16,4,4,4,24,24,0,0,0,0,12,12,12,12,0,0,0,0,8,8,4,4,4,12,12,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(4,4,0,4,4,4,4,4,8,8,8,8,8,8,4,4,12,12,0,24,16,24,8,8,4,12,20,0,0,0,16,0,16,8,8,8,8,4,4,12,12,0,0,16,8,24,16,0,0,0,0,0),#12
+  c(24,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#16
+  c(8,8,0,8,8,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,16,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#24
+  c(0,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#48
+  c(10,10,10,22,20,20,22,18,22,20,30,26,26,34,22,20,20,18,34,30,34,26,22,20,22,20,18,13,16,19,19,18,15,38,54,54,40,54,40,38,40,54,54,54,54,38,40,33,39,34,134,134),#sub
+  c(2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,3,4,4),#rk
+  c(0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1)#Ab
+)
+M72=cbind(#50 (2^3 3^2)
+  c(1,1,1,1,19,37,3,21,3,5,1,1,1,1,21,7,39,7,1,7,19,13,25,1,1,1,7,13,3,9,1,19,37,3,21,3,5,1,9,21,9,9,21,15,19,31,7,15,39,7),#2
+  c(2,2,2,2,2,2,2,2,2,2,2,8,8,8,2,2,2,2,8,8,8,8,8,8,26,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,26,26,26,8,8,26,8,8,8),#3
+  c(2,2,6,38,20,2,36,18,4,2,6,2,2,2,18,0,0,0,18,24,12,18,6,30,6,14,8,2,12,6,38,20,2,36,18,4,2,6,18,18,54,6,18,0,36,0,0,0,0,0),#4
+  c(2,2,2,2,2,2,6,6,6,10,2,8,8,8,6,14,6,14,8,20,8,32,20,8,26,8,20,32,24,36,8,8,8,24,24,24,40,8,0,24,0,18,6,30,8,32,38,48,24,56),#6
+  c(36,4,0,0,0,0,0,0,0,0,0,12,36,4,0,0,0,0,36,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,36,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(6,6,24,6,6,6,6,6,6,6,6,0,0,0,24,24,6,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#9
+  c(4,4,12,4,4,4,0,0,8,4,12,16,16,16,0,0,0,0,0,12,24,0,12,24,12,40,28,16,24,12,16,16,16,0,0,32,16,48,0,0,0,12,0,0,0,0,0,0,0,0),#12
+  c(6,6,24,6,6,6,18,18,18,30,6,0,0,0,0,24,18,42,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#18
+  c(0,8,0,0,0,0,0,0,0,0,0,24,0,32,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#24
+  c(12,12,0,12,12,12,0,0,24,12,36,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#36
+  c(0,24,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#72
+  c(12,12,11,18,24,24,24,24,24,24,18,19,24,24,18,20,48,48,14,35,37,35,37,27,20,27,35,35,37,37,36,48,48,48,48,48,48,36,10,26,14,24,30,26,26,69,32,69,96,96),#sub
+  c(2,1,2,2,2,2,2,2,2,2,2,2,3,2,2,2,3,3,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,2,2,2,2,2,2,2,3,2,2,3,2,3,3,3),#rk
+  c(0,1,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1)#Ab
+)
+M80=cbind(#52 (2^4 5)
+  c(1,1,1,11,11,21,41,1,3,3,3,3,3,23,25,5,21,1,7,3,7,3,3,3,9,5,1,11,11,11,11,3,3,23,3,23,43,23,35,15,11,31,7,27,7,11,3,7,15,23,47,15),#2
+  c(2,2,2,12,12,22,2,42,4,4,44,44,44,24,2,22,6,26,40,12,8,12,4,4,2,6,10,12,12,52,52,20,20,40,44,24,4,24,12,32,36,16,40,20,8,4,12,8,0,40,0,0),#4
+  c(4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,64,4,4,4),#5
+  c(4,4,20,24,24,4,4,4,40,40,0,0,0,0,20,20,20,20,0,0,0,0,8,8,4,4,4,40,40,0,0,40,40,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(4,4,4,4,4,4,4,4,12,12,12,12,12,12,20,20,4,4,28,12,28,12,12,12,36,20,4,4,4,4,4,12,12,12,12,12,12,12,20,20,4,4,28,28,28,44,12,28,0,12,28,60),#10
+  c(40,8,40,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#16
+  c(8,8,8,8,8,8,8,8,16,16,16,16,16,16,8,8,24,24,0,48,32,48,16,16,8,24,40,8,8,8,8,0,0,0,16,16,16,16,8,8,24,24,0,0,32,16,48,32,0,0,0,0),#20
+  c(16,16,0,16,16,16,16,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,32,32,16,16,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#40
+  c(0,32,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#80
+  c(10,10,10,22,20,20,22,18,22,20,30,26,26,34,22,20,20,18,34,30,34,26,22,20,22,20,18,22,20,30,26,22,20,34,38,54,54,40,54,40,38,40,54,54,54,54,38,40,17,54,134,134),#sub
+  c(2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,3,4,4),#rk
+  c(0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1)#Ab
+)
+M108=cbind(#45 (2^2 3^3)
+  c(1,1,3,55,3,1,1,1,1,1,1,1,1,1,9,39,27,3,3,3,3,3,19,7,19,19,55,19,3,3,3,1,1,1,1,9,9,15,39,27,3,7,19,55,3),#2
+  c(2,2,2,2,2,8,8,26,8,8,26,8,26,8,26,8,26,26,26,8,8,80,8,8,26,8,8,26,8,26,8,26,26,26,26,26,26,26,26,26,80,26,26,26,26),#3
+  c(54,2,0,0,0,18,6,18,18,54,18,2,2,2,18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,18,54,2,18,54,0,0,0,0,0,0,0,0),#4
+  c(2,2,6,2,6,8,8,26,8,8,26,8,26,8,18,24,54,6,6,24,24,24,44,20,62,44,8,62,24,78,24,26,26,26,26,18,18,66,42,54,24,74,62,26,78),#6
+  c(6,6,6,6,6,18,18,0,18,18,0,18,0,18,0,18,0,54,54,72,72,0,18,18,0,18,18,0,18,0,18,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#9
+  c(0,4,0,0,0,36,12,36,36,0,36,16,52,16,36,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,48,36,0,52,36,0,0,0,0,0,0,0,0,0),#12
+  c(6,6,18,6,18,18,18,0,18,18,0,18,0,18,0,18,0,18,18,0,0,0,18,54,0,18,18,0,54,0,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#18
+  c(18,18,72,18,18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#27
+  c(0,12,0,0,0,0,36,0,0,0,0,36,0,36,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#36
+  c(18,18,0,18,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#54
+  c(0,36,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#108
+  c(12,12,11,20,20,22,22,25,20,30,33,30,33,24,17,34,39,23,19,26,22,28,34,34,39,32,50,55,50,55,40,52,52,84,84,24,24,54,76,54,62,76,76,140,140),#sub
+  c(2,1,2,2,2,2,2,2,2,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,2,2,2,2,3,4,3,2,2,2,3,2,3,2,3,4,3),#rk
+  c(0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1)#Ab
+)
+M112=cbind(#43 (2^4 7)
+  c(1,1,15,15,29,57,1,3,3,3,3,3,31,33,5,29,1,7,3,7,3,3,3,9,5,1,3,31,59,31,47,19,15,43,7,35,7,11,3,7,15,63,15),#2
+  c(2,2,16,16,30,2,58,4,4,60,60,60,32,2,30,6,34,56,12,8,12,4,4,2,6,10,60,32,4,32,16,44,48,20,56,28,8,4,12,8,0,0,0),#4
+  c(6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,48,6,6),#7
+  c(4,4,32,32,4,4,4,56,56,0,0,0,0,28,28,28,28,0,0,0,0,8,8,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(6,6,6,6,6,6,6,18,18,18,18,18,18,30,30,6,6,42,18,42,18,18,18,54,30,6,18,18,18,18,30,30,6,6,42,42,42,66,18,42,48,42,90),#14
+  c(56,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#16
+  c(12,12,12,12,12,12,12,24,24,24,24,24,24,12,12,36,36,0,72,48,72,24,24,12,36,60,24,24,24,24,12,12,36,36,0,0,48,24,72,48,0,0,0),#28
+  c(24,24,24,24,24,24,24,0,0,0,0,0,0,0,0,0,0,0,0,0,0,48,48,24,24,24,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#56
+  c(0,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#112
+  c(10,10,22,20,20,22,18,22,20,30,26,26,34,22,20,20,18,34,30,34,26,22,20,22,20,18,38,54,54,40,54,40,38,40,54,54,54,54,38,40,17,134,134),#sub
+  c(2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,4,4),#rk
+  c(0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1)#Ab
+)
+M120=cbind(#47 (2^3 3 5)
+  c(1,1,1,1,1,1,1,11,7,31,17,41,37,1,1,1,11,21,3,13,1,7,13,3,9,1,31,61,3,33,3,5,1,25,31,23,9,33,23,11,11,47,7,23,15,63,7),#2
+  c(2,2,2,2,20,2,2,2,2,2,2,2,2,2,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,20,20,2,8,8,8,2,2,2,8,2,2,2,2),#3
+  c(2,2,2,2,30,10,10,36,40,16,30,6,10,46,6,22,12,2,20,10,14,8,2,12,6,62,32,2,60,30,4,2,6,30,0,40,6,30,0,20,60,0,0,0,0,0,0),#4
+  c(4,4,4,4,24,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,24,24,4,4,4,4,4,4,4,4,4,4,4,4),#5
+  c(2,2,2,2,20,2,2,22,2,2,22,22,2,2,8,2,22,42,6,26,2,2,2,6,6,2,2,2,6,6,6,10,2,20,20,10,0,0,40,22,22,22,8,46,6,6,14),#6
+  c(12,20,60,4,0,20,60,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(4,4,4,4,24,4,4,4,28,4,28,4,28,4,4,4,4,4,12,12,4,28,52,12,36,4,4,4,12,12,12,20,4,0,24,12,36,12,12,4,4,28,28,12,60,12,28),#10
+  c(4,4,4,4,0,20,20,0,20,20,0,0,20,20,0,44,24,4,40,20,4,4,4,0,0,4,4,4,0,0,8,4,12,0,0,20,0,0,0,40,0,0,0,0,0,0,0),#12
+  c(8,8,8,8,0,8,8,8,8,8,8,8,8,8,32,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,8,32,32,32,8,8,8,32,8,8,8,8),#15
+  c(8,8,8,8,0,0,0,24,0,24,0,24,0,24,24,8,8,8,0,0,56,32,8,48,24,8,8,8,0,0,16,8,24,0,0,0,24,0,0,0,0,0,0,0,0,0,0),#20
+  c(0,40,0,8,0,40,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#24
+  c(8,8,8,8,0,8,8,8,8,8,8,8,8,8,32,8,8,8,24,24,8,8,8,24,24,8,8,8,24,24,24,40,8,0,0,0,0,0,0,8,8,8,32,24,24,24,56),#30
+  c(48,0,0,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#40
+  c(16,16,16,16,0,0,0,0,0,0,0,0,0,0,0,16,16,16,0,0,16,16,16,0,0,16,16,16,0,0,32,16,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#60
+  c(0,0,0,32,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#120
+  c(16,16,16,16,12,16,16,32,32,32,32,32,32,24,14,24,32,32,32,32,24,32,32,32,32,24,32,32,32,32,32,32,24,19,22,32,22,22,24,32,32,64,24,64,64,64,64),#sub
+  c(2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,2,3,3,3,3),#rk
+  c(0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1)#Ab
+)
+M168=cbind(#57
+  c(1,1,1,1,1,1,1,15,29,3,17,15,7,43,21,57,49,1,3,5,1,1,1,1,15,29,3,17,1,7,13,3,9,1,43,85,3,45,3,5,1,21,7,7,9,45,31,31,31,63,7,7,7,31,15,87,7),#2
+  c(14,14,2,2,2,2,14,14,14,14,14,2,2,2,2,2,2,2,14,14,14,8,56,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,56,56,2,8,8,14,8,56,2,14,8,56,2,2,2,2),#3
+  c(2,2,2,2,2,2,30,16,2,28,14,48,56,20,42,6,14,62,4,2,6,6,6,30,16,2,28,14,14,8,2,12,6,86,44,2,84,42,4,2,6,42,0,0,6,42,0,0,0,0,0,0,0,0,0,0,0),#4
+  c(14,14,2,2,2,2,14,42,70,42,70,30,2,2,30,30,2,2,42,70,14,8,56,2,30,58,6,34,2,2,2,6,6,2,2,2,6,6,6,10,2,0,56,14,0,0,98,56,56,30,98,8,56,62,6,6,14),#6
+  c(6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,48,48,48,6,6,6,6,6,6,6,6,6,6,6,6,6),#7
+  c(28,4,12,28,84,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(28,28,4,4,4,4,84,56,28,56,28,0,28,28,0,0,28,28,56,28,84,0,0,60,32,4,56,28,4,4,4,0,0,4,4,4,0,0,8,4,12,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#12
+  c(6,6,6,6,6,6,6,6,6,18,18,6,42,6,42,6,42,6,18,30,6,6,6,6,6,6,18,18,6,42,78,18,54,6,6,6,18,18,18,30,6,0,0,0,54,18,18,18,18,42,42,42,42,18,90,18,42),#14
+  c(0,0,12,12,12,12,0,0,0,0,0,12,12,12,12,12,12,12,0,0,0,48,0,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,0,0,96,48,48,0,48,0,12,0,48,0,12,12,12,12),#21
+  c(56,56,0,56,0,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#24
+  c(12,12,12,12,12,12,12,12,12,0,0,36,0,36,0,36,0,36,24,12,36,36,36,12,12,12,0,0,84,48,12,72,36,12,12,12,0,0,24,12,36,0,0,0,36,0,0,0,0,0,0,0,0,0,0,0,0),#28
+  c(0,0,12,12,12,12,0,0,0,0,0,12,12,12,12,12,12,12,0,0,0,48,0,12,12,12,36,36,12,12,12,36,36,12,12,12,36,36,36,60,12,0,0,0,0,0,0,0,0,12,0,48,0,36,36,36,84),#42
+  c(0,24,72,0,0,24,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#56
+  c(0,0,24,24,24,24,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,24,24,24,0,0,24,24,24,0,0,24,24,24,0,0,48,24,72,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#84
+  c(0,0,0,0,0,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#168
+  c(16,16,16,16,16,16,24,32,32,32,32,32,32,32,32,32,32,24,32,32,24,14,14,24,32,32,32,32,24,32,32,32,32,24,32,32,32,32,32,32,24,15,12,12,22,22,64,24,24,64,64,24,24,64,64,64,64),#sub
+  c(2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,2,2,3,3,2,2,3,3,3,3),#rk
+  c(0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1),#Ab
+  c(46,40,20,28,44,16,78,110,142,98,130,128,112,160,144,192,176,96,80,100,60,30,84,60,92,124,68,100,36,52,68,44,60,108,172,236,116,180,32,40,24,179,104,50,60,180,226,148,178,336,160,52,112,196,108,372,64)#ss
+)
+M200=cbind(#52
+  c(1,1,1,1,51,101,3,53,3,5,1,51,103,7,1,1,1,1,1,1,1,11,51,21,61,1,1,11,21,3,13,1,51,101,3,53,3,5,1,25,35,35,45,25,11,11,51,51,71,23,103,7),#2
+  c(2,2,50,102,52,2,100,50,4,2,6,100,0,0,2,2,2,10,10,50,50,60,20,50,10,70,22,12,2,20,10,102,52,2,100,50,4,2,6,50,60,100,50,150,20,100,100,100,0,0,0,0),#4
+  c(4,4,4,4,4,4,4,4,4,4,4,4,4,4,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24),#5
+  c(100,4,100,0,0,0,0,0,0,0,0,0,0,0,20,100,4,20,100,100,100,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,0,0,0,0,0,0,0,0,0,0,0,0),#8
+  c(4,4,4,4,4,4,12,12,12,20,4,4,12,28,24,24,24,24,24,24,24,64,24,104,64,24,24,64,104,72,112,24,24,24,72,72,72,120,24,0,40,40,80,0,64,64,24,24,104,152,72,168),#10
+  c(8,8,0,8,8,8,0,0,16,8,24,0,0,0,48,48,48,40,40,0,0,40,80,0,40,80,128,88,48,80,40,48,48,48,0,0,96,48,144,0,40,0,0,0,80,0,0,0,0,0,0,0),#20
+  c(20,20,20,20,20,20,20,20,20,20,20,20,20,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#25
+  c(0,16,0,0,0,0,0,0,0,0,0,0,0,0,80,0,96,80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#40
+  c(20,20,20,20,20,20,60,60,60,100,20,20,60,140,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#50
+  c(40,40,0,40,40,40,0,0,80,40,120,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#100
+  c(0,80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),#200
+  c(12,12,12,18,24,24,24,24,24,24,18,24,48,48,22,32,32,18,18,32,22,38,42,38,42,30,30,38,38,42,42,48,64,64,64,64,64,64,48,17,34,38,29,21,34,34,64,42,74,74,128,128),#sub
+  c(2,1,2,2,2,2,2,2,2,2,2,2,3,3,2,3,2,2,2,3,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,3,2,3,3,3,3),#rk
+  c(0,1,0,0,0,0,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1)#Ab
+)
+}
+if(l==64){load(system.file("M64.RData",package="grouptheory"))}
+if(l==96){load(system.file("M96.RData",package="grouptheory"))}
+if(l==128){load(system.file("M128.RData",package="grouptheory"))}#ok
+if(l==144){load(system.file("M144.RData",package="grouptheory"))}
+if(l==160){load(system.file("M160.RData",package="grouptheory"))}
+if(l==192){load(system.file("M192.RData",package="grouptheory"))}
+if(l==240){load(system.file("M240.RData",package="grouptheory"))}
+if(l==288){load(system.file("M288.RData",package="grouptheory"))}
+if(l==320){load(system.file("M320.RData",package="grouptheory"))}#ok
+if(l==360){load(system.file("M360.RData",package="grouptheory"))}
+if(l==384){load(system.file("M384.RData",package="grouptheory"))}
+if(l==400){load(system.file("M400.RData",package="grouptheory"))}
+if(l==480){load(system.file("M480.RData",package="grouptheory"))}
+if(l==576){load(system.file("M576.RData",package="grouptheory"))}
+if(l==600){load(system.file("M600.RData",package="grouptheory"))}
+if(l==640){load(system.file("M640.RData",package="grouptheory"))}#ok
+if(l==720){load(system.file("M720.RData",package="grouptheory"))}
+if(l==960){load(system.file("M960.RData",package="grouptheory"))}#ok
+if(l==1200){load(system.file("M1200.RData",package="grouptheory"))}
+if(l==1440){load(system.file("M1440.RData",package="grouptheory"))}
+    #############################
+    Aw=Relabel(A,w)
+    ab=IsAbelian(Aw)
+    ord=c(OrderStructure(Aw),rk,ab)
+    
+    M=get(paste0("M",l)); nM=ncol(M); nd=length(Divisors(l))
+    if(nM==nd+2){
+      oo=FindRows(ord,M)
+    }
+    if(nM==nd+3){
+      oo=FindRows(ord,M[,c(1:nd,nd+2,nd+3)])
+      if(length(oo)>1){
+        nsu=NumberOfSubgroups(Aw)
+        oo=intersect(oo,which(M[,nd+1]==nsu[1]))
+      }
+    }
+    if(nM==nd+4){
+      oo=FindRows(ord,M[,c(1:nd,nd+2,nd+3)])
+      if(length(oo)>1){
+        nsu=NumberOfSubgroups(Aw)
+        oo=intersect(oo,which(M[,nd+1]==nsu[1]))
+        oo=intersect(oo,which(M[,nd+4]==nsu[2]))
+      }
+    }
+    if(length(oo)>1){out=-100}#paste(oo,collapse=".")}
+    else{out=oo}
+  }
+  return(out)
+}
+```
+
+# YfromMAX
+
+```{r function-YfromMAX}
+#' YfromMAX
+#'
+#' @param M,A,X The matrix group "M", its Cayley table "A", and its list of up-to-conjugacy-subgroups "X".
+#'
+#' @return A list of identifiers of the groups
+#' 
+#' @export
+#'
+#' @examples
+YfromMAX=function(M,A,X){
+  dd=c(); n=nrow(M[[1]]); mid=-1
+  for(j in 1:length(M)){
+    if(det(M[[j]])<0){dd=c(dd,j)}
+    if(sum((M[[j]]+diag(rep(1,n)))^2)<0.01){mid=j}
+  }
+  ox=c()
+  for(j in 1:length(X)){#print(j)
+    w=X[[j]]; x=w[3]; ww=w[-c(1,2,3)]; o1=o2=0
+    if(length(intersect(ww,dd))>0){o1=1}
+    if(length(intersect(ww,mid))>0){o2=1}
+    type=GroupId(A,ww,x)
+    ox=rbind(ox,c(w[1],type,w[2],x,o1,o2))
+  }
+  return(ox)
+}
+```
+
+# NamesfromY
+
+```{r function-NamesfromY}
+#' YNamesfromY
+#'
+#' @param Y The matrix group "M", its Cayley table "A", and its list of up-to-conjugacy-subgroups "X".
+#'
+#' @return The names of the groups
+#' 
+#' @export
+#'
+#' @examples
+NamesfromY=function(Y){
+  out=c()
+  for(j in 1:nrow(Y)){
+    size=Y[j,1]; type=Y[j,2]
+    if(type==0 | type== -100){out=c(out,paste0(size,".?","(",j,")"))}
+    if(type>0){out=c(out,paste0(size,".",type,"(",j,")"))}
+    if(size==21 & type==-4){out=c(out,paste0("21.1","(",j,")"))}
+    if(type==-3){out=c(out,paste0("D",size,"(",j,")"))}
+    if(size==4 & type==-2){out=c(out,paste0("K",4,"(",j,")"))}
+    if(size==9 & type==-2){out=c(out,paste0("Z3^2","(",j,")"))}
+    if(type==-1){out=c(out,paste0("Z",size,"(",j,")"))}
+    
+  }
+  return(out)
+}
+```
+
+<!--
+# There can be development actions
+
+Create a chunk with 'development' actions
+
+- The chunk needs to be named `development` or `dev`
+- It contains functions that are used for package development only
+- Note that you may want to store most of these functions in the 0-dev_history.Rmd file
+
+These are only included in the present flat template file, their content will not be part of the package anywhere else.
+-->
+
+```{r development-inflate, eval=FALSE}
+# Keep eval=FALSE to avoid infinite loop in case you hit the knit button
+# Execute in the console directly
+fusen::inflate(flat_file = "dev/flat_first.Rmd", vignette_name = "Get started")
+```
+
+
+# Inflate your package
+
+You're one inflate from paper to box.
+Build your package from this very Rmd using `fusen::inflate()`
+
+- Verify your `"DESCRIPTION"` file has been updated
+- Verify your function is in `"R/"` directory
+- Verify your test is in `"tests/testthat/"` directory
+- Verify this Rmd appears in `"vignettes/"` directory

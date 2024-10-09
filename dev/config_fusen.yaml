@@ -1,0 +1,45 @@
+flat_first.Rmd:
+  path: dev/flat_first.Rmd
+  state: active
+  R:
+  - R/afromm.R
+  - R/afromm2.R
+  - R/conjugates.R
+  - R/divisors.R
+  - R/efromax.R
+  - R/efromv.R
+  - R/efromx.R
+  - R/findrows.R
+  - R/groupid.R
+  - R/inverse.R
+  - R/is1number.R
+  - R/is2number.R
+  - R/is3number.R
+  - R/isabelian.R
+  - R/namesfromy.R
+  - R/numberofsubgroups.R
+  - R/occurrences.R
+  - R/orderstructure.R
+  - R/primefactors.R
+  - R/rel.R
+  - R/relabel.R
+  - R/relx.R
+  - R/remov.R
+  - R/smallest.R
+  - R/span.R
+  - R/xfroma.R
+  - R/yfrommax.R
+  tests:
+  - tests/testthat/test-occurrences.R
+  - tests/testthat/test-smallest.R
+  - tests/testthat/test-findrows.R
+  - tests/testthat/test-divisors.R
+  vignettes: vignettes/get-started.Rmd
+  inflate:
+    flat_file: dev/flat_first.Rmd
+    vignette_name: Get started
+    open_vignette: true
+    check: true
+    document: true
+    overwrite: ask
+    clean: ask

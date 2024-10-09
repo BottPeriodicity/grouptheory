@@ -1,0 +1,20 @@
+Package: grouptheory
+Title: Basic Group Theory
+Version: 0.0.0.9000
+Authors@R: 
+    person("Andrea", "Aveni", , "andrea.aveni@duke.edu", role = c("aut", "cre"))
+Description: Identify Groups and work with them.
+License: MIT + file LICENSE
+Imports: 
+    parallel,
+    stats
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: 
+    knitr
+Config/fusen/version: 0.6.0
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
